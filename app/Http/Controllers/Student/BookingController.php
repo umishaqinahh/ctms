@@ -139,9 +139,8 @@ class BookingController extends Controller
 
             DB::commit();
 
-            // Redirect to the booking management page
-            return redirect()->route('student.bookings.index')
-                ->with('success', 'Booking created successfully. You can view your booking in the list below.');
+            // Redirect to payment confirmation page
+            return view('student.bookings.payment-confirm', compact('booking'));
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -250,24 +249,48 @@ class BookingController extends Controller
         }
 
         // Check if booking can be cancelled
-        if ($booking->status !== 'active') {
-            return back()->with('error', 'This booking cannot be cancelled.');
+        if ($booking->status !== Booking::STATUS_PENDING) {
+            return back()->with('error', 'Only pending bookings can be cancelled.');
         }
 
-        // Delete the corresponding time slot
-        BicycleTimeSlot::where('bicycle_id', $booking->bicycle_id)
-            ->where('date', $booking->start_time->format('Y-m-d'))
-            ->where('start_time', $booking->start_time)
-            ->where('end_time', $booking->end_time)
-            ->where('status', 'booked')
-            ->delete();
+        DB::beginTransaction();
 
-        // Cancel booking
-        $booking->update(['status' => 'cancelled']);
+        try {
+            // Delete the corresponding time slot
+            BicycleTimeSlot::where('bicycle_id', $booking->bicycle_id)
+                ->where('date', $booking->start_time->format('Y-m-d'))
+                ->where('start_time', $booking->start_time)
+                ->where('end_time', $booking->end_time)
+                ->where('status', 'booked')
+                ->delete();
 
-        // Update bicycle status
-        $booking->bicycle->update(['status' => 'available']);
+            // Update bicycle status
+            $booking->bicycle->update(['status' => 'available']);
 
-        return back()->with('success', 'Booking cancelled successfully.');
+            // Delete the booking
+            $booking->delete();
+
+            DB::commit();
+            return back()->with('success', 'Booking cancelled successfully.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Failed to cancel the booking. Please try again.');
+        }
+    }
+
+    public function receipt(Booking $booking)
+    {
+        // Ensure the user can only view their own bookings
+        if ($booking->user_id !== auth()->id()) {
+            abort(403);
+        }
+    
+        // Ensure the booking has a payment
+        if (!$booking->payment || $booking->payment->payment_status !== 'succeeded') {
+            return redirect()->route('student.bookings.index')
+                ->with('error', 'No payment receipt available for this booking.');
+        }
+    
+        return view('student.bookings.receipt', compact('booking'));
     }
 }

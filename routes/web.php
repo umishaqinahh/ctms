@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\BicycleController;
 use App\Http\Controllers\Admin\BookingReportController;
 use App\Http\Controllers\Student\BookingController;  // Add this line
+use App\Http\Controllers\Student\StripeController;  // Add this line
 
 Route::middleware(['web'])->group(function () {
     // Authentication Routes
@@ -50,11 +51,16 @@ Route::middleware(['web'])->group(function () {
             Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
             Route::patch('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
             Route::get('/bookings/check-availability', [BookingController::class, 'checkAvailability'])->name('bookings.check-availability');
-             // ... existing routes ...
             Route::get('/bookings/{booking}/manage', [BookingController::class, 'manageRide'])->name('bookings.manage-ride');
             Route::post('/bookings/{booking}/start', [BookingController::class, 'startRide'])->name('bookings.start-ride');
             Route::post('/bookings/{booking}/complete', [BookingController::class, 'completeRide'])->name('bookings.complete-ride');
             Route::post('/bookings/{booking}/feedback', [BookingController::class, 'submitFeedback'])->name('bookings.submit-feedback');
+            Route::get('/student/checkout', [StripeController::class, 'checkout'])->name('stripe.checkout');
+            // Stripe Payment Routes
+            Route::post('/stripe/create-session/{booking}', [StripeController::class, 'session'])->name('stripe.session');
+            Route::get('/stripe/success', [StripeController::class, 'success'])->name('stripe.success');
+            Route::get('/stripe/cancel', [StripeController::class, 'cancel'])->name('stripe.cancel');
+            Route::get('/bookings/{booking}/receipt', [BookingController::class, 'receipt'])->name('bookings.receipt');
         });
     });
 

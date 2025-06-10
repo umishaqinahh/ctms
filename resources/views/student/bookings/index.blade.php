@@ -2,6 +2,16 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto">
+    @if(session('success'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <span class="block sm:inline">{{ session('success') }}</span>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <span class="block sm:inline">{{ session('error') }}</span>
+        </div>
+    @endif
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
             <h2 class="text-2xl font-bold">My Bookings</h2>
@@ -42,13 +52,20 @@
                             <form method="POST" action="{{ route('student.bookings.cancel', $booking) }}" class="inline">
                                 @csrf
                                 @method('PATCH')
-                                <button type="submit" class="text-red-600 hover:text-red-900">Cancel</button>
+                                <button type="submit" class="text-red-600 hover:text-red-900 mr-4">Cancel</button>
                             </form>
                         @endif
 
                         @if($booking->status === 'returned' && !$booking->feedback)
                             <a href="{{ route('student.bookings.manage-ride', $booking) }}" 
-                               class="text-green-600 hover:text-green-900">Leave Feedback</a>
+                               class="text-green-600 hover:text-green-900 mr-4">Leave Feedback</a>
+                        @endif
+
+@if($booking->payment && $booking->payment->payment_status === 'succeeded')
+                            <a href="{{ route('student.bookings.receipt', $booking) }}" 
+                               class="text-gray-600 hover:text-gray-900">
+                               <i class="fas fa-receipt"></i> View Receipt
+                            </a>
                         @endif
                     </td>
                 </tr>

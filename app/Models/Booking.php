@@ -40,4 +40,9 @@ class Booking extends Model
     {
         return $this->belongsTo(Bicycle::class);
     }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
+    }
 }
